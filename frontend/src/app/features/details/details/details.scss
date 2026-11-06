@@ -1,0 +1,21 @@
+:host { display: block; overflow-wrap: anywhere; }
+.detail-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.eyebrow { color: #5c6e77; font-size: .75rem; font-weight: 650; }
+header h2 { font-size: 1.4rem; line-height: 1.35; margin: .5rem 0; }
+header p { color: var(--tui-text-secondary); line-height: 1.6; }
+.person-heading { display: flex; gap: 1rem; align-items: flex-start; }
+.person-heading > div { min-width: 0; }
+section { padding: 1.1rem 0; border-top: 1px solid var(--tui-border-normal); }
+section:first-of-type { margin-top: 1.5rem; }
+h3 { margin: 0 0 .75rem; font-size: .85rem; display: flex; align-items: center; gap: .5rem; }
+p { margin: .25rem 0; font-size: .85rem; }
+a[tuiLink] { display: block; font-size: .9rem; line-height: 1.55; margin: .25rem 0; }
+.muted, small { color: var(--tui-text-secondary); line-height: 1.6; }
+.relation { padding: .4rem 0; }
+.dotted { padding-left: .75rem; border-left: 2px dashed #7c5693; margin: .75rem 0; }
+.assignment { margin-bottom: .9rem; font-size: .85rem; line-height: 1.6; }
+.counts { display: flex; flex-wrap: wrap; gap: 1.5rem; margin: 1.3rem 0; color: #52666f; font-size: .8rem; }
+.counts strong { font-size: 1.3rem; display: block; color: var(--tui-text-primary); }
+.staff-switch { display: flex; align-items: center; gap: .65rem; font-size: .85rem; margin-bottom: 1rem; cursor: pointer; }
+.pagination { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; font-size: .8rem; }
+[tuiNotification] { margin-bottom: 1rem; }

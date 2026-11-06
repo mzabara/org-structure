@@ -1,0 +1,43 @@
+<div role="tree" [attr.aria-label]="people() ? 'Дерево сотрудников' : 'Дерево подразделений'">
+  <ng-container [ngTemplateOutlet]="branch" [ngTemplateOutletContext]="{ node: root(), level: 1 }" />
+</div>
+<ng-template #branch let-node="node" let-level="level">
+  <div role="treeitem" class="branch" [attr.data-node]="node.id"
+    [attr.aria-level]="level" [attr.aria-label]="node.label"
+    [attr.aria-expanded]="node.children.length ? expanded().has(node.id) : null"
+    [attr.aria-selected]="node.id === selectedId()" tabindex="0"
+    (keydown)="keyboard($event, node)">
+    <div class="node" [class.selected]="node.id === selectedId()"
+      [class.matrix]="highlighted().includes(node.id)">
+      @if (node.children.length) {
+        <button tuiIconButton appearance="flat" size="s" type="button"
+          [iconStart]="expanded().has(node.id) ? '@tui.chevron-down' : '@tui.chevron-right'"
+          [attr.aria-label]="(expanded().has(node.id) ? 'Свернуть: ' : 'Развернуть: ') + node.label"
+          [tuiHint]="expanded().has(node.id) ? 'Свернуть ветку' : 'Развернуть ветку'"
+          (click)="toggled.emit(node.id)"></button>
+      } @else { <span class="leaf-space"></span> }
+      <button tuiButton appearance="flat" type="button" class="node-content" (click)="picked.emit(node.id)">
+        @if (people()) { <span tuiAvatar size="s" [round]="true">{{ initials(node.label) }}</span> }
+        @else { <tui-icon icon="@tui.building-2" class="department-icon" /> }
+        <span class="node-text">
+          <span class="node-title" [title]="node.label">{{ node.label }}</span>
+          <span class="node-subtitle" [title]="node.subtitle">{{ node.subtitle }}</span>
+          <span class="node-caption" [title]="node.caption">{{ node.caption }}</span>
+        </span>
+        @if (!people()) { <span tuiBadge appearance="neutral" size="s">{{ node.count }} сотр.</span> }
+      </button>
+      @if (node.dottedManagerIds.length) {
+        <tui-icon icon="@tui.git-merge" class="matrix-icon"
+          [tuiHint]="'Матричные руководители: ' + node.dottedManagerIds.length"
+          [attr.aria-label]="'Матричные руководители: ' + node.dottedManagerIds.length" />
+      }
+    </div>
+    @if (expanded().has(node.id) && node.children.length) {
+      <div role="group" class="children">
+        @for (child of node.children; track child.id) {
+          <ng-container [ngTemplateOutlet]="branch" [ngTemplateOutletContext]="{ node: child, level: level + 1 }" />
+        }
+      </div>
+    }
+  </div>
+</ng-template>

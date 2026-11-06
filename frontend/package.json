@@ -1,0 +1,42 @@
+{
+  "name": "orgstructure",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve --host 127.0.0.1 --port 4204 --proxy-config proxy.conf.cjs",
+    "generate:api": "node tools/openapi/node_modules/openapi-typescript/bin/cli.js ../docs/openapi.yaml -o src/app/core/api/schema.ts",
+    "check:api": "npm run generate:api && git diff --exit-code -- src/app/core/api/schema.ts",
+    "typecheck": "ngc --noEmit -p tsconfig.app.json",
+    "build": "npm run generate:api && ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test --watch=false"
+  },
+  "private": true,
+  "packageManager": "npm@11.19.1",
+  "dependencies": {
+    "@angular/common": "22.2.4",
+    "@angular/compiler": "22.2.4",
+    "@angular/core": "22.2.4",
+    "@angular/forms": "22.2.4",
+    "@angular/platform-browser": "22.2.4",
+    "@angular/router": "22.2.4",
+    "@taiga-ui/core": "5.31.0",
+    "@taiga-ui/kit": "5.31.0",
+    "@taiga-ui/cdk": "5.31.0",
+    "@taiga-ui/i18n": "5.31.0",
+    "@taiga-ui/styles": "5.31.0",
+    "@taiga-ui/icons": "5.31.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "22.2.4",
+    "@angular/cli": "22.2.4",
+    "@angular/compiler-cli": "22.2.4",
+    "jsdom": "^30.0.0",
+    "less": "^4.2.0",
+    "prettier": "^3.8.1",
+    "typescript": "~6.0.2",
+    "vitest": "^5.0.0"
+  }
+}

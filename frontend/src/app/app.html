@@ -1,0 +1,8 @@
+<tui-root>
+  <header class="topbar">
+    <a class="brand" routerLink="/departments"><tui-icon icon="@tui.network" />Оргструктура</a>
+    <app-search (selected)="select($event)" />
+    <span class="dataset"><span class="status"></span>Демонстрационные данные</span>
+  </header>
+  <router-outlet />
+</tui-root>

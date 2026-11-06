@@ -1,0 +1,14 @@
+:host { display: block; }
+.topbar { display: flex; align-items: center; gap: 2rem; padding: 1.25rem 2rem; background: white;
+  border-bottom: 1px solid var(--tui-border-normal); min-height: 4.4rem; box-sizing: border-box; }
+.brand { display: flex; align-items: center; gap: .7rem; text-decoration: none; color: var(--tui-text-primary);
+  font-weight: 700; font-size: 1.2rem; flex-shrink: 0; }
+.brand tui-icon { color: #3267ae; width: 1.65rem; height: 1.65rem; }
+.dataset { margin-left: auto; color: #52666f; font-size: .75rem; display: flex; align-items: center; gap: .5rem; white-space: nowrap; }
+.status { width: .4rem; height: .4rem; border-radius: 50%; background: #2e7d62; }
+@media (max-width: 900px) {
+  .topbar { padding: 1rem; gap: .8rem; flex-wrap: wrap; }
+  .brand { font-size: 1.1rem; }
+  .dataset { font-size: .7rem; }
+  app-search { order: 2; max-width: none; flex-basis: 100%; }
+}

@@ -15,3 +15,5 @@ out/
 .DS_Store
 # Локальные настройки Codex (общие настройки в .codex/ — коммитим)
 .codex/*.local.toml
+.run/
+.kotlin/

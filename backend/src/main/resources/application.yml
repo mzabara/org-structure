@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: org-structure
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/orgtree}
+    username: ${DB_USER:orgtree}
+    password: ${DB_PASSWORD:}
+  flyway:
+    enabled: true
+  mvc:
+    problemdetails:
+      enabled: true
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+app:
+  security:
+    api-keys: ${API_KEYS:}

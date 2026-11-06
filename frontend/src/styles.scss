@@ -1,0 +1,12 @@
+html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+body { background: #f3f5f7; color: #202f3b; }
+* { box-sizing: border-box; letter-spacing: 0; }
+:root {
+  --tui-font-text: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --tui-font-heading: var(--tui-font-text);
+  --tui-background-accent-1: #3569ad;
+  --tui-background-accent-1-hover: #285b9d;
+  --tui-text-action: #285e9f;
+}
+button, a, input { -webkit-tap-highlight-color: transparent; }
+a:focus-visible, button:focus-visible { outline-offset: 3px; }

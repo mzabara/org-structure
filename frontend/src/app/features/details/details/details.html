@@ -1,0 +1,111 @@
+<div class="detail-heading">
+  <span class="eyebrow">{{ mode() === 'employees' ? 'Карточка сотрудника' : 'Карточка подразделения' }}</span>
+  <button tuiIconButton appearance="flat" size="s" iconStart="@tui.x" aria-label="Закрыть карточку"
+    title="Закрыть карточку" (click)="closed.emit()"></button>
+</div>
+@if (state(); as result) {
+  @if (result.status === 'loading') {
+    <div aria-label="Загрузка карточки" role="status">
+      <p [tuiSkeleton]="true">Название карточки</p><p [tuiSkeleton]="true">Подробные сведения</p>
+    </div>
+  } @else if (result.status === 'error') {
+    <div tuiNotification appearance="negative" role="alert">{{ result.message }}</div>
+    <button tuiButton appearance="secondary" size="m" iconStart="@tui.refresh-cw" (click)="load()">Повторить</button>
+  }
+}
+@if (employee(); as person) {
+  <header class="person-heading">
+    <span tuiAvatar size="l" [round]="true">{{ initials(person.fullName) }}</span>
+    <div><h2>{{ person.fullName }}</h2><p>{{ person.position }}</p></div>
+  </header>
+  <section>
+    <h3>Контакты</h3>
+    <a tuiLink [href]="'mailto:' + person.email">{{ person.email }}</a>
+    @if (person.phone) { <a tuiLink [href]="'tel:' + person.phone">{{ person.phone }}</a> }
+    @else { <p class="muted">Телефон не указан</p> }
+  </section>
+  <section><h3>Подразделение</h3>
+    <a tuiLink [routerLink]="['/departments', person.department.id]">{{ person.department.name }}</a>
+  </section>
+  <section><h3>Линейный руководитель</h3>
+    @if (person.lineManager; as manager) {
+      <a tuiLink [routerLink]="['/employees', manager.id]">{{ manager.fullName }}</a>
+      <p class="muted">{{ manager.position }}</p>
+    } @else { <p class="muted">Нет линейного руководителя</p> }
+  </section>
+  <section><h3>Матричные руководители <span tuiBadge appearance="neutral" size="s">{{ person.dottedManagers.length }}</span></h3>
+    @for (relation of person.dottedManagers; track relation.employee.id) {
+      <div class="relation dotted">
+        <a tuiLink [routerLink]="['/employees', relation.employee.id]">{{ relation.employee.fullName }}</a>
+        <p class="muted">{{ relation.comment || 'Контекст не указан' }}</p>
+      </div>
+    } @empty { <p class="muted">Не указано</p> }
+  </section>
+  <section><h3>Подчинённые <span tuiBadge appearance="neutral" size="s">{{ person.directReports.length }}</span></h3>
+    @for (relation of person.directReports; track relation.employee.id) {
+      <div class="relation">
+        <a tuiLink [routerLink]="['/employees', relation.employee.id]">{{ relation.employee.fullName }}</a>
+        <small>{{ relation.type === 'LINE' ? 'Линейное подчинение' : 'Матричное подчинение' }}</small>
+        @if (relation.comment) { <p class="muted">{{ relation.comment }}</p> }
+      </div>
+    } @empty { <p class="muted">Нет прямых подчинённых</p> }
+  </section>
+  <section><h3>Чем занимается</h3>
+    @for (assignment of tasks(); track assignment.id) {
+      <div class="assignment"><strong>{{ assignment.title }}</strong><p>{{ assignment.description || 'Не указано' }}</p></div>
+    } @empty { <p class="muted">Не указано</p> }
+  </section>
+  <section><h3>За что отвечает</h3>
+    @for (assignment of responsibilities(); track assignment.id) {
+      <div class="assignment"><strong>{{ assignment.title }}</strong><p>{{ assignment.description || 'Не указано' }}</p></div>
+    } @empty { <p class="muted">Не указано</p> }
+  </section>
+}
+@if (department(); as department) {
+  <header><span tuiBadge appearance="neutral" size="s">{{ department.code }}</span>
+    <h2>{{ department.name }}</h2><p>{{ department.description || 'Описание не указано' }}</p>
+  </header>
+  <div class="counts"><span><strong>{{ department.employeeCount }}</strong> в подразделении</span>
+    <span><strong>{{ department.totalEmployeeCount }}</strong> включая вложенные</span></div>
+  <section><h3>Руководитель</h3>
+    @if (department.head; as head) { <a tuiLink [routerLink]="['/employees', head.id]">{{ head.fullName }}</a> }
+    @else { <p class="muted">Не указано</p> }
+  </section>
+  <section><h3>Входит в</h3>
+    @if (department.parent; as parent) { <a tuiLink [routerLink]="['/departments', parent.id]">{{ parent.name }}</a> }
+    @else { <p class="muted">Корневое подразделение</p> }
+  </section>
+  <section><h3>Дочерние подразделения</h3>
+    @for (child of department.children; track child.id) {
+      <a tuiLink [routerLink]="['/departments', child.id]">{{ child.name }}</a>
+    } @empty { <p class="muted">Нет дочерних подразделений</p> }
+  </section>
+  <section><h3>Сотрудники</h3>
+    <label class="staff-switch"><input tuiSwitch type="checkbox" [ngModel]="includeSubdepartments()"
+      (ngModelChange)="toggleStaff($event)" />Включая вложенные подразделения</label>
+    @if (staff(); as result) {
+      @switch (result.status) {
+        @case ('loading') { <p [tuiSkeleton]="true" role="status">Загрузка сотрудников</p> }
+        @case ('error') {
+          <div tuiNotification appearance="negative" role="alert">{{ result.message }}</div>
+          <button tuiButton size="s" appearance="secondary" iconStart="@tui.refresh-cw" (click)="loadStaff()">Повторить</button>
+        }
+        @case ('success') {
+          @for (person of result.data.items; track person.id) {
+            <div class="relation"><a tuiLink [routerLink]="['/employees', person.id]">{{ person.fullName }}</a>
+              <p class="muted">{{ person.position }}</p></div>
+          } @empty { <p class="muted">В подразделении нет сотрудников</p> }
+          @if (result.data.totalPages > 1) {
+            <nav class="pagination" aria-label="Страницы сотрудников">
+              <button tuiIconButton size="s" appearance="secondary" iconStart="@tui.chevron-left"
+                aria-label="Предыдущая страница" [disabled]="page() === 0" (click)="changePage(-1)"></button>
+              <span>{{ page() + 1 }} из {{ result.data.totalPages }}</span>
+              <button tuiIconButton size="s" appearance="secondary" iconStart="@tui.chevron-right"
+                aria-label="Следующая страница" [disabled]="page() + 1 >= result.data.totalPages" (click)="changePage(1)"></button>
+            </nav>
+          }
+        }
+      }
+    }
+  </section>
+}

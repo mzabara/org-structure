@@ -1,0 +1,43 @@
+<div class="search" (focusout)="blur($event)" (keydown)="keyboard($event)">
+  <tui-textfield tuiTextfieldSize="m" iconStart="@tui.search">
+    <input tuiInput type="search" aria-label="Поиск по имени, должности или отделу"
+      placeholder="Имя, должность или отдел" maxlength="100" autocomplete="off"
+      [ngModel]="query()" (ngModelChange)="update($event)" (focus)="open.set(true)"
+      [attr.aria-expanded]="open() && query().trim().length >= 2" aria-controls="search-results" />
+  </tui-textfield>
+  @if (open() && query().trim().length >= 2) {
+    <div id="search-results" class="results" aria-label="Результаты поиска">
+      @if (state(); as result) {
+        @switch (result.status) {
+          @case ('loading') { <p role="status">Поиск...</p> }
+          @case ('error') {
+            <p role="alert">{{ result.message }}</p>
+            <button tuiButton appearance="secondary" size="s" iconStart="@tui.refresh-cw"
+              (click)="update(query())">Повторить</button>
+          }
+          @case ('success') {
+            @if (result.data.employees.length) {
+              <h3>Сотрудники</h3>
+              @for (match of result.data.employees; track match.employee.id) {
+                <button tuiButton appearance="flat" class="result" type="button"
+                  (click)="pick('employees', match.employee.id, match.pathIds)">
+                  <span><strong>{{ match.employee.fullName }}</strong><small>{{ match.employee.position }}</small></span>
+                </button>
+              }
+            }
+            @if (result.data.departments.length) {
+              <h3>Подразделения</h3>
+              @for (match of result.data.departments; track match.department.id) {
+                <button tuiButton appearance="flat" class="result" type="button"
+                  (click)="pick('departments', match.department.id, match.pathIds)">
+                  <span><strong>{{ match.department.name }}</strong><small>{{ match.department.code }}</small></span>
+                </button>
+              }
+            }
+            @if (!result.data.employees.length && !result.data.departments.length) { <p role="status">Ничего не найдено</p> }
+          }
+        }
+      }
+    </div>
+  }
+</div>

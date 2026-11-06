@@ -1,0 +1,46 @@
+<tui-tabs class="tabs" [activeItemIndex]="mode() === 'departments' ? 0 : 1" aria-label="Вид оргструктуры">
+  <a tuiTab routerLink="/departments" routerLinkActive="active" iconStart="@tui.building-2">Подразделения</a>
+  <a tuiTab routerLink="/employees" routerLinkActive="active" iconStart="@tui.users">Сотрудники</a>
+</tui-tabs>
+<main class="workspace" [class.has-selection]="selectedId() !== null">
+  <section class="tree-pane" [attr.aria-label]="label()">
+    <div class="tree-toolbar"><div><h1>{{ label() }}</h1>
+      <span class="muted">{{ mode() === 'departments' ? 'Организационная структура' : 'Линейное подчинение' }}</span></div>
+      <div class="tools">
+        <button tuiIconButton appearance="flat" size="s" iconStart="@tui.list-plus" aria-label="Развернуть все ветки"
+          tuiHint="Развернуть все ветки" (click)="expandAll(true)"></button>
+        <button tuiIconButton appearance="flat" size="s" iconStart="@tui.list-minus" aria-label="Свернуть все ветки"
+          tuiHint="Свернуть все ветки" (click)="expandAll(false)"></button>
+        <button tuiIconButton appearance="flat" size="s" iconStart="@tui.refresh-cw" aria-label="Обновить дерево"
+          tuiHint="Обновить дерево" (click)="load()"></button>
+      </div>
+    </div>
+    <div class="tree-scroll">
+      @if (state(); as result) {
+        @switch (result.status) {
+          @case ('loading') {
+            <div role="status" aria-label="Загрузка дерева" class="skeletons">
+              @for (i of [1, 2, 3, 4]; track i) { <div [tuiSkeleton]="true" class="skeleton"></div> }
+            </div>
+          }
+          @case ('error') {
+            <div tuiNotification appearance="negative" role="alert">{{ result.message }}</div>
+            <button tuiButton appearance="secondary" iconStart="@tui.refresh-cw" size="m" (click)="load()">Повторить</button>
+          }
+          @case ('success') {
+            <app-tree [root]="result.data" [expanded]="expanded()" [selectedId]="selectedId()"
+              [people]="mode() === 'employees'" [highlighted]="highlights()"
+              (toggled)="toggle($event)" (picked)="select($event)" />
+          }
+        }
+      }
+    </div>
+  </section>
+  <aside class="detail-pane" aria-label="Подробные сведения" (keydown.escape)="close()">
+    @if (selectedId(); as id) {
+      <app-details [mode]="mode()" [entityId]="id" (closed)="close()" />
+    } @else {
+      <div class="no-selection"><tui-icon icon="@tui.contact-round" /><h2>Карточка не выбрана</h2></div>
+    }
+  </aside>
+</main>

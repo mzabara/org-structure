@@ -1,0 +1,10 @@
+{
+  "name": "orgtree-openapi-tooling",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Изолирует TypeScript 5 генератора от TypeScript 6 приложения Angular 22.",
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3"
+  }
+}

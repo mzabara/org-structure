@@ -1,0 +1,11 @@
+:host { display: block; width: 100%; max-width: 38rem; }
+.search { position: relative; }
+.results { position: absolute; top: calc(100% + .5rem); left: 0; right: 0; max-height: 65vh; overflow: auto;
+  z-index: 20; border: 1px solid var(--tui-border-normal); border-radius: 6px; padding: .75rem;
+  background: var(--tui-background-base); box-shadow: 0 6px 24px #152d4420; }
+h3 { margin: .75rem .5rem .4rem; font-size: .75rem; color: var(--tui-text-secondary); text-transform: uppercase; }
+p { margin: .75rem .5rem; }
+.result[tuiButton] { display: flex; justify-content: flex-start; width: 100%; height: auto; text-align: left;
+  white-space: normal; padding: .65rem .5rem; }
+.result span { display: grid; gap: .2rem; overflow-wrap: anywhere; }
+small { font-size: .8rem; font-weight: 400; color: var(--tui-text-secondary); }
