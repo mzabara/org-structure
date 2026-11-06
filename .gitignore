@@ -1,0 +1,17 @@
+# Сборка и зависимости
+node_modules/
+dist/
+.angular/
+build/
+.gradle/
+out/
+*.class
+# IDE
+.idea/
+.vscode/
+*.iml
+# Окружение
+.env
+.DS_Store
+# Локальные настройки Codex (общие настройки в .codex/ — коммитим)
+.codex/*.local.toml
