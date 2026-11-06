@@ -1,0 +1,21 @@
+# Локальная БД для разработки. Запуск: docker compose up -d db
+services:
+  db:
+    image: postgres:16
+    container_name: orgtree-db
+    environment:
+      POSTGRES_DB: orgtree
+      POSTGRES_USER: orgtree
+      POSTGRES_PASSWORD: orgtree   # только для локальной разработки
+    ports:
+      - "5432:5432"
+    volumes:
+      - orgtree-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orgtree -d orgtree"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  orgtree-db-data:

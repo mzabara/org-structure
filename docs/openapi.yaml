@@ -1,0 +1,465 @@
+openapi: 3.1.0
+info:
+  title: API оргструктуры компании
+  version: 1.0.0
+  description: |
+    Внешний REST API оргструктуры. Только чтение (GET).
+    Описывает подразделения, сотрудников, линейное и матричное подчинение,
+    задачи и зоны ответственности.
+
+    **Это контракт — источник истины.** Реализация (backend) и клиент (frontend, внешние системы)
+    должны ему соответствовать. Изменения контракта — только по согласованию команды.
+
+    Соглашения:
+    - Базовый путь `/api/v1`. Несовместимые изменения выходят в `/api/v2`.
+    - Идентификаторы — целые числа (`int64`).
+    - Имена полей — camelCase. Даты не используются в первой версии.
+    - Ошибки — `application/problem+json` (RFC 9457).
+    - Списки пагинируются: `page` (с 0) и `size` (по умолчанию 20, максимум 100).
+    - Аутентификация: заголовок `X-API-Key`. В профиле `dev` проверка отключена.
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Локальная разработка
+security:
+  - ApiKeyAuth: []
+tags:
+  - name: Подразделения
+  - name: Сотрудники
+  - name: Поиск
+
+paths:
+  /departments/tree:
+    get:
+      tags: [Подразделения]
+      operationId: getDepartmentTree
+      summary: Дерево подразделений
+      description: Возвращает дерево подразделений, начиная с корня или с указанного подразделения.
+      parameters:
+        - name: rootId
+          in: query
+          description: С какого подразделения строить дерево. По умолчанию — корень компании.
+          schema: { type: integer, format: int64 }
+        - $ref: '#/components/parameters/Depth'
+      responses:
+        '200':
+          description: Дерево подразделений
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DepartmentTreeNode' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /departments/{id}:
+    get:
+      tags: [Подразделения]
+      operationId: getDepartment
+      summary: Карточка подразделения
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Карточка подразделения
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Department' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /departments/{id}/employees:
+    get:
+      tags: [Подразделения]
+      operationId: listDepartmentEmployees
+      summary: Сотрудники подразделения
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+        - name: includeSubdepartments
+          in: query
+          description: Включить сотрудников всех вложенных подразделений.
+          schema: { type: boolean, default: false }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Страница сотрудников
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmployeePage' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /employees:
+    get:
+      tags: [Сотрудники]
+      operationId: listEmployees
+      summary: Список сотрудников
+      description: Постраничный список с фильтрами. Сортировка — по ФИО.
+      parameters:
+        - name: q
+          in: query
+          description: Подстрока для поиска по ФИО и должности (без учёта регистра).
+          schema: { type: string, minLength: 2, maxLength: 100 }
+        - name: departmentId
+          in: query
+          description: Только сотрудники этого подразделения.
+          schema: { type: integer, format: int64 }
+        - name: includeSubdepartments
+          in: query
+          description: Вместе с departmentId — включить вложенные подразделения.
+          schema: { type: boolean, default: false }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Страница сотрудников
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmployeePage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /employees/tree:
+    get:
+      tags: [Сотрудники]
+      operationId: getEmployeeTree
+      summary: Дерево сотрудников по линейному подчинению
+      description: |
+        Дерево строится только по линейным связям (LINE). Матричные связи не образуют дерево,
+        поэтому у каждого узла они перечислены в поле `dottedManagerIds`.
+      parameters:
+        - name: rootId
+          in: query
+          description: С какого сотрудника строить дерево. По умолчанию — глава компании.
+          schema: { type: integer, format: int64 }
+        - $ref: '#/components/parameters/Depth'
+      responses:
+        '200':
+          description: Дерево сотрудников
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmployeeTreeNode' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /employees/{id}:
+    get:
+      tags: [Сотрудники]
+      operationId: getEmployee
+      summary: Карточка сотрудника
+      description: Включает отдел, линейного и матричных руководителей, прямых подчинённых, задачи и зоны ответственности.
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Карточка сотрудника
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Employee' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /employees/{id}/management-chain:
+    get:
+      tags: [Сотрудники]
+      operationId: getManagementChain
+      summary: Цепочка линейных руководителей
+      description: От непосредственного руководителя вверх до главы компании. Для главы компании — пустой список.
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Руководители по возрастанию уровня
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/EmployeeSummary' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /employees/{id}/direct-reports:
+    get:
+      tags: [Сотрудники]
+      operationId: listDirectReports
+      summary: Прямые подчинённые
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+        - name: type
+          in: query
+          description: Какие связи учитывать.
+          schema:
+            type: string
+            enum: [LINE, DOTTED, ALL]
+            default: ALL
+      responses:
+        '200':
+          description: Подчинённые со своим типом связи
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ReportingRelation' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /employees/{id}/assignments:
+    get:
+      tags: [Сотрудники]
+      operationId: listAssignments
+      summary: Задачи и зоны ответственности сотрудника
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+        - name: kind
+          in: query
+          schema: { $ref: '#/components/schemas/AssignmentKind' }
+      responses:
+        '200':
+          description: Список (может быть пустым)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Assignment' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /search:
+    get:
+      tags: [Поиск]
+      operationId: search
+      summary: Общий поиск по сотрудникам и подразделениям
+      description: Подстрока без учёта регистра. Для каждого найденного узла возвращается путь до корня — UI использует его для раскрытия дерева.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 100 }
+        - name: limit
+          in: query
+          description: Максимум результатов каждого типа.
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        '200':
+          description: Результаты поиска
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SearchResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    Depth:
+      name: depth
+      in: query
+      description: Максимальная глубина вложенности (0 — только корневой узел). По умолчанию — без ограничения (до 20).
+      schema: { type: integer, minimum: 0, maximum: 20 }
+    Page:
+      name: page
+      in: query
+      description: Номер страницы, начиная с 0.
+      schema: { type: integer, minimum: 0, default: 0 }
+    Size:
+      name: size
+      in: query
+      description: Размер страницы.
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+
+  responses:
+    BadRequest:
+      description: Некорректные параметры запроса
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: Нет или неверный API-ключ
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Объект не найден
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    Problem:
+      type: object
+      description: Описание ошибки по RFC 9457
+      required: [title, status]
+      properties:
+        type:   { type: string, example: 'about:blank' }
+        title:  { type: string, example: 'Сотрудник не найден' }
+        status: { type: integer, example: 404 }
+        detail: { type: string, example: 'Сотрудник с id=999 не существует' }
+        instance: { type: string, example: '/api/v1/employees/999' }
+
+    DepartmentSummary:
+      type: object
+      required: [id, code, name]
+      properties:
+        id:   { type: integer, format: int64, example: 5 }
+        code: { type: string, example: 'DEV-BE' }
+        name: { type: string, example: 'Backend-разработка' }
+
+    DepartmentTreeNode:
+      type: object
+      required: [id, code, name, employeeCount, children]
+      properties:
+        id:   { type: integer, format: int64 }
+        code: { type: string }
+        name: { type: string }
+        head: { oneOf: [{ $ref: '#/components/schemas/EmployeeSummary' }, { type: 'null' }] }
+        employeeCount:
+          type: integer
+          description: Сколько сотрудников работает непосредственно в этом подразделении.
+        totalEmployeeCount:
+          type: integer
+          description: Сколько сотрудников в подразделении вместе с вложенными.
+        children:
+          type: array
+          items: { $ref: '#/components/schemas/DepartmentTreeNode' }
+
+    Department:
+      type: object
+      required: [id, code, name, children, employeeCount, totalEmployeeCount]
+      properties:
+        id:          { type: integer, format: int64 }
+        code:        { type: string }
+        name:        { type: string }
+        description: { type: [string, 'null'] }
+        parent:      { oneOf: [{ $ref: '#/components/schemas/DepartmentSummary' }, { type: 'null' }] }
+        head:        { oneOf: [{ $ref: '#/components/schemas/EmployeeSummary' }, { type: 'null' }] }
+        children:
+          type: array
+          items: { $ref: '#/components/schemas/DepartmentSummary' }
+        employeeCount:      { type: integer }
+        totalEmployeeCount: { type: integer }
+
+    EmployeeSummary:
+      type: object
+      description: Краткие сведения о сотруднике — для списков и ссылок.
+      required: [id, fullName, position, department]
+      properties:
+        id:       { type: integer, format: int64, example: 12 }
+        fullName: { type: string, example: 'Белова Дарья Михайловна' }
+        position: { type: string, example: 'Старший frontend-разработчик' }
+        department: { $ref: '#/components/schemas/DepartmentSummary' }
+
+    ReportingRelation:
+      type: object
+      description: Связь подчинения вместе с сотрудником на другом конце.
+      required: [employee, type]
+      properties:
+        employee: { $ref: '#/components/schemas/EmployeeSummary' }
+        type:     { $ref: '#/components/schemas/ReportingType' }
+        comment:
+          type: [string, 'null']
+          description: Для DOTTED — в рамках чего подчинение.
+
+    ReportingType:
+      type: string
+      enum: [LINE, DOTTED]
+
+    AssignmentKind:
+      type: string
+      enum: [TASK, RESPONSIBILITY]
+      description: TASK — что делает сотрудник; RESPONSIBILITY — за что отвечает.
+
+    Assignment:
+      type: object
+      required: [id, kind, title]
+      properties:
+        id:          { type: integer, format: int64 }
+        kind:        { $ref: '#/components/schemas/AssignmentKind' }
+        title:       { type: string }
+        description: { type: [string, 'null'] }
+
+    Employee:
+      type: object
+      required: [id, fullName, position, email, department, dottedManagers, directReports, assignments]
+      properties:
+        id:       { type: integer, format: int64 }
+        fullName: { type: string }
+        position: { type: string }
+        email:    { type: string, format: email }
+        phone:    { type: [string, 'null'] }
+        department:  { $ref: '#/components/schemas/DepartmentSummary' }
+        lineManager:
+          description: Линейный руководитель. null только у главы компании.
+          oneOf: [{ $ref: '#/components/schemas/EmployeeSummary' }, { type: 'null' }]
+        dottedManagers:
+          type: array
+          items: { $ref: '#/components/schemas/ReportingRelation' }
+        directReports:
+          description: Прямые подчинённые (линейные и матричные).
+          type: array
+          items: { $ref: '#/components/schemas/ReportingRelation' }
+        assignments:
+          type: array
+          items: { $ref: '#/components/schemas/Assignment' }
+
+    EmployeeTreeNode:
+      type: object
+      required: [id, fullName, position, department, dottedManagerIds, children]
+      properties:
+        id:       { type: integer, format: int64 }
+        fullName: { type: string }
+        position: { type: string }
+        department: { $ref: '#/components/schemas/DepartmentSummary' }
+        dottedManagerIds:
+          type: array
+          description: Идентификаторы матричных руководителей (пунктирные связи).
+          items: { type: integer, format: int64 }
+        children:
+          type: array
+          items: { $ref: '#/components/schemas/EmployeeTreeNode' }
+
+    EmployeePage:
+      type: object
+      required: [items, page, size, totalItems, totalPages]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/EmployeeSummary' }
+        page:       { type: integer }
+        size:       { type: integer }
+        totalItems: { type: integer, format: int64 }
+        totalPages: { type: integer }
+
+    SearchResult:
+      type: object
+      required: [employees, departments]
+      properties:
+        employees:
+          type: array
+          items:
+            type: object
+            required: [employee, pathIds]
+            properties:
+              employee: { $ref: '#/components/schemas/EmployeeSummary' }
+              pathIds:
+                type: array
+                description: Id сотрудников от корня дерева до найденного (включительно), по линейному подчинению.
+                items: { type: integer, format: int64 }
+        departments:
+          type: array
+          items:
+            type: object
+            required: [department, pathIds]
+            properties:
+              department: { $ref: '#/components/schemas/DepartmentSummary' }
+              pathIds:
+                type: array
+                description: Id подразделений от корня до найденного (включительно).
+                items: { type: integer, format: int64 }
